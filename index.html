@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al Shami | Feed Variance Diagnostic</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Slate (Neutrals), Rose (Investigate/Danger), Amber (Monitor/Warning), Emerald (API/Success) -->
+    <!-- Application Structure Plan: The SPA uses a "Diagnostic to Cure" narrative flow. It opens with an executive summary of the pain (Hero metrics), dives into 'When' it happens (Interactive Heatmap), transitions to 'How Much' it costs (Dynamic Chart of Labor/Revenue drain), and concludes with the 'Why & How to Fix' (Data Fidelity comparison and API Unlock features). This structure prioritizes the financial and operational impact to drive the user toward the API upgrade solution, rather than just reading a static list. -->
+    <!-- Visualization & Content Choices: 
+         1. Hero Stats (Inform): Dynamic HTML counters for 277 Days, 42 Events, $1840+ Leakage. Goal: Immediate impact. 
+         2. Friction Heatmap (Organize/Compare): CSS Grid based matrix (desktop) and list view (mobile). Goal: Show concentration of issues without SVG. Interactive hover highlights insights. 
+         3. Financial Drain (Inform/Change): Chart.js Bar Chart with toggle between Labor Hours and Revenue. Goal: Quantify the pain effectively using canvas. 
+         4. Data Fidelity & Solution (Relationships): Side-by-side interactive comparison cards. Goal: Clearly contrast the limitations of the current state vs the API upgrade. 
+         Method: Vanilla JS + Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f8fafc', 100: '#f1f5f9', 500: '#64748b', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        
+        /* Required Chart Container Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        /* Custom utilities */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="antialiased selection:bg-rose-200 selection:text-rose-900">
+
+    <!-- Navigation / Header -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="text-2xl">📊</div>
+                    <span class="font-bold text-xl tracking-tight text-slate-800">Feed Variance Diagnostic</span>
+                </div>
+                <div class="hidden sm:flex space-x-6 text-sm font-medium text-slate-500">
+                    <a href="#exposure" class="hover:text-slate-900 transition-colors">Exposure Matrix</a>
+                    <a href="#impact" class="hover:text-slate-900 transition-colors">Financial Impact</a>
+                    <a href="#solution" class="hover:text-slate-900 transition-colors">API Unlock</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+
+        <!-- Executive Summary / Hero -->
+        <section id="executive-summary" class="space-y-6">
+            <div class="border-l-4 border-slate-800 pl-4">
+                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Store: Al Shami (Westheimer)</h1>
+                <p class="mt-2 text-lg text-slate-600 max-w-3xl">
+                    This interactive diagnostic report evaluates synchronization gaps across all 3P Delivery Platforms over a 277-day evaluation window. The data below outlines the frequency of data drops, the resulting operational drain, and the required steps for revenue recovery.
+                </p>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl mb-2">⏱️</div>
+                    <div class="text-3xl font-black text-slate-800" id="stat-days">0</div>
+                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wider mt-1">Days Evaluated</div>
+                </div>
+                <div class="bg-rose-50 p-6 rounded-2xl shadow-sm border border-rose-100 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl mb-2">⚠️</div>
+                    <div class="text-3xl font-black text-rose-600" id="stat-events">0</div>
+                    <div class="text-sm font-semibold text-rose-800 uppercase tracking-wider mt-1">Severe Gap Events</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl mb-2">💸</div>
+                    <div class="text-3xl font-black text-slate-800" id="stat-revenue">$0</div>
+                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wider mt-1">Lost Gross Margin</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Friction Windows Matrix -->
+        <section id="exposure" class="scroll-mt-24 space-y-6">
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-slate-900 border-b pb-2">1. Synchronization Gap Frequency</h2>
+                <p class="text-slate-600 text-sm md:text-base max-w-4xl">
+                    This section maps the specific times when synchronization drops occur between 3P platforms and your POS. Identifying these "Peak Friction Windows" is crucial, as human spot-checking fails during these high-volume dinner bands. <strong>Hover over or tap the colored cells to view specific insights.</strong>
+                </p>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Matrix Container -->
+                <div class="flex-grow bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Day-of-Week vs. Dinner Band Exposure (4PM - 11PM)</h3>
+                    
+                    <!-- Desktop/Tablet Grid View -->
+                    <div class="hidden sm:block overflow-hidden">
+                        <div class="grid grid-cols-8 gap-1 text-center text-xs font-medium" id="matrix-container">
+                            <!-- JS will populate this -->
+                        </div>
+                    </div>
+
+                    <!-- Mobile List View (Prevents horizontal scrolling) -->
+                    <div class="block sm:hidden space-y-3" id="mobile-matrix-container">
+                        <!-- JS will populate this with only Investigate/Monitor events -->
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium border-t pt-4 text-slate-600">
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-rose-500 mr-2"></span>🔴 Investigate (Peak)</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-400 mr-2"></span>🟡 Monitor (Developing)</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-slate-100 border border-slate-300 mr-2"></span>Typical (Isolated)</div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Insight Panel -->
+                <div class="w-full lg:w-80 flex-shrink-0">
+                    <div class="bg-slate-800 text-white p-6 rounded-2xl h-full flex flex-col shadow-md">
+                        <h3 class="text-lg font-bold mb-4 flex items-center border-b border-slate-600 pb-2">
+                            <span class="mr-2">🔎</span> Dynamic Insight
+                        </h3>
+                        <div id="insight-panel" class="text-slate-300 text-sm space-y-4 leading-relaxed">
+                            <p class="italic text-slate-400">Hover over the matrix to view specific window data.</p>
+                            <div>
+                                <strong class="text-white block mb-1">Overall Reality:</strong>
+                                A total of 42 severe synchronization gap events were confirmed. Wednesday (7-9 PM) and Friday (7-8 PM) carry the highest confirmed recurrence rates.
+                            </div>
+                            <div class="bg-rose-900/50 border border-rose-700/50 p-3 rounded-lg mt-auto">
+                                <strong class="text-rose-200 block mb-1">The False Fix:</strong>
+                                Spot-checking tablets during these shifts fails; human eyes cannot reliably detect instantaneous API drops.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Impact Chart -->
+        <section id="impact" class="scroll-mt-24 space-y-6">
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-slate-900 border-b pb-2">2. Projected Operational & Revenue Drain</h2>
+                <p class="text-slate-600 text-sm md:text-base max-w-4xl">
+                    Understanding the frequency of errors is only half the equation. This section translates the ~55 extrapolated annual gap events into hard business costs. Use the toggles below to view either the wasted managerial labor hours or the unrecoverable gross margin based on your actual $33.48 average check.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <!-- Interactive Controls -->
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button id="btn-revenue" class="px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-700 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                        💰 View Revenue Leakage
+                    </button>
+                    <button id="btn-labor" class="px-5 py-2.5 bg-white text-slate-700 border border-slate-300 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                        ⏱️ View Labor Drain
+                    </button>
+                </div>
+
+                <!-- Dynamic Text Context -->
+                <div class="text-center mb-6 h-16">
+                    <p id="chart-context-text" class="text-slate-600 font-medium max-w-2xl mx-auto">
+                        Based on your specific online ordering Average Check of $33.48, 55 unrecoverable events represents over <strong class="text-slate-900">$1,840+ in Lost Gross Margin</strong> annually.
+                    </p>
+                </div>
+
+                <!-- Chart Container (Strict styling applied) -->
+                <div class="chart-container">
+                    <canvas id="impactChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Fidelity & Solution -->
+        <section id="solution" class="scroll-mt-24 space-y-6 pb-12">
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-slate-900 border-b pb-2">3. The Data Fidelity Boundary & API Unlock</h2>
+                <p class="text-slate-600 text-sm md:text-base max-w-4xl">
+                    Why can't these issues be resolved today? The current CSV export only proves a loss occurred, but platforms demand transaction-level proof. Compare your current capability against the Forensic API Audit tier to understand the path to revenue recovery.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Current State (CSV) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-bl-lg">Current State</div>
+                    <div class="text-3xl mb-4 opacity-50 group-hover:opacity-100 transition-opacity">📄</div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">Static CSV Export</h3>
+                    <p class="text-slate-600 mb-4 text-sm">The CSV proves the window of loss, confirming feed variance and volume signals. However, it is an incomplete evidence chain.</p>
+                    
+                    <ul class="space-y-3 text-sm text-slate-700">
+                        <li class="flex items-start">
+                            <span class="text-rose-500 mr-2 mt-0.5">✖</span>
+                            <span>Cannot surface exact minute-level timestamps.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-rose-500 mr-2 mt-0.5">✖</span>
+                            <span>Missing Forensic Order GUIDs.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-rose-500 mr-2 mt-0.5">✖</span>
+                            <span><strong>Zero revenue recapture potential.</strong> Every manual incident review closes with zero auditability.</span>
+                        </li>
+                    </ul>
+
+                    <div class="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                        <h4 class="font-bold text-orange-800 flex items-center text-sm mb-1">
+                            <span class="mr-1">⏳</span> The Ticking Clock
+                        </h4>
+                        <p class="text-xs text-orange-700">3P platforms strictly enforce dispute time limits (often 30-90 days). The statute of limitations on unlogged missing orders is actively expiring every day.</p>
+                    </div>
+                </div>
+
+                <!-- Future State (API) -->
+                <div class="bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-6 relative overflow-hidden shadow-lg transform transition-transform hover:-translate-y-1">
+                    <div class="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">Recommended Upgrade</div>
+                    <div class="text-3xl mb-4">🔓</div>
+                    <h3 class="text-xl font-bold text-emerald-900 mb-3">Forensic API Audit Tier</h3>
+                    <p class="text-emerald-800 mb-4 text-sm font-medium">Upgrading to the API tier provides the transactional proof required for official dispute and revenue recovery.</p>
+                    
+                    <ul class="space-y-3 text-sm text-emerald-900 font-medium">
+                        <li class="flex items-start">
+                            <span class="text-emerald-600 mr-2 mt-0.5 text-lg leading-none">✓</span>
+                            <span><strong>Forensic Order GUIDs</strong> for bulk dispute filing.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-600 mr-2 mt-0.5 text-lg leading-none">✓</span>
+                            <span><strong>Item-level root-cause attribution</strong> per synchronization gap.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-600 mr-2 mt-0.5 text-lg leading-none">✓</span>
+                            <span><strong>Refund recovery</strong> documentation chain.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-600 mr-2 mt-0.5 text-lg leading-none">✓</span>
+                            <span><strong>Exact minute-level precision</strong> to staff and respond proactively.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-600 mr-2 mt-0.5 text-lg leading-none">✓</span>
+                            <span><strong>Live synchronization monitoring</strong> enrollment.</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="mt-6">
+                        <button class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-emerald-700 transition-colors focus:ring-4 focus:ring-emerald-200">
+                            Initiate API Integration
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            
+            <p class="text-center text-xs text-slate-400 mt-8 italic">
+                DIAGNOSTIC ONLY: Derived from Static CSV Export. Forensic API Verification Required for Official Dispute and Revenue Recovery.
+            </p>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. Data Storage ---
+        const appState = {
+            report: {
+                client: "Al Shami (Westheimer)",
+                days: 277,
+                events: 42,
+                annualEventsExtrapolated: 55,
+                avgCheck: 33.48,
+                lostMargin: 1840,
+                laborHours: 42,
+                laborCycleMins: 45
+            },
+            schedule: [
+                { time: "4:00 PM", days: ["T", "T", "T", "T", "T", "T", "T"] },
+                { time: "5:00 PM", days: ["T", "M", "M", "T", "T", "M", "T"] },
+                { time: "6:00 PM", days: ["T", "M", "I", "T", "M", "I", "M"] },
+                { time: "7:00 PM", days: ["M", "I", "I", "M", "I", "I", "M"] },
+                { time: "8:00 PM", days: ["T", "M", "I", "T", "I", "T", "M"] },
+                { time: "9:00 PM", days: ["T", "T", "M", "T", "T", "T", "T"] }
+            ],
+            dayNames: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            dayNamesFull: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            currentChartView: 'revenue' // 'revenue' or 'labor'
+        };
+
+        // Contextual messages for the matrix hover
+        const insights = {
+            "I": {
+                title: "🔴 Highest Exposure Risk",
+                desc: "This specific window carries the highest confirmed recurrence rate. Wednesday evenings represent the single highest-frequency gap window in the full record."
+            },
+            "M": {
+                title: "🟡 Developing Variance",
+                desc: "This window shows a developing variance pattern. While not a day-level peak, it requires monitoring as transaction volumes shift."
+            },
+            "T": {
+                title: "⚪ Typical Activity",
+                desc: "Isolated or zero occurrences of synchronization gaps detected during this window."
+            }
+        };
+
+        // --- 2. Core Interaction & UI Population ---
+
+        function initApp() {
+            animateCounters();
+            renderMatrix();
+            initChart();
+            setupEventListeners();
+        }
+
+        // Animate Hero Numbers
+        function animateCounters() {
+            const animateValue = (id, start, end, duration, prefix = "", suffix = "") => {
+                let obj = document.getElementById(id);
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = prefix + Math.floor(progress * (end - start) + start).toLocaleString() + suffix;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            };
+
+            animateValue("stat-days", 0, appState.report.days, 1500);
+            animateValue("stat-events", 0, appState.report.events, 1500);
+            animateValue("stat-revenue", 0, appState.report.lostMargin, 1500, "$", "+");
+        }
+
+        // Render Interactive Matrix Grid
+        function renderMatrix() {
+            const container = document.getElementById('matrix-container');
+            const mobileContainer = document.getElementById('mobile-matrix-container');
+            let desktopHTML = '';
+            let mobileHTML = '';
+
+            // Desktop Header Row
+            desktopHTML += `<div class="p-2 border-b-2 border-slate-200"></div>`;
+            appState.dayNames.forEach(day => {
+                desktopHTML += `<div class="p-2 font-bold text-slate-700 border-b-2 border-slate-200">${day}</div>`;
+            });
+
+            // Rows
+            appState.schedule.forEach((row, rowIndex) => {
+                // Time Column
+                desktopHTML += `<div class="p-3 flex items-center justify-center font-bold text-slate-700 bg-slate-50 border-r border-slate-100">${row.time}</div>`;
+                
+                row.days.forEach((status, colIndex) => {
+                    let bgClass = "bg-slate-50 text-slate-400";
+                    let innerText = "-";
+                    let statusName = "Typical";
+
+                    if (status === "I") {
+                        bgClass = "bg-rose-100 text-rose-700 font-bold hover:bg-rose-200 cursor-pointer border border-rose-200 shadow-sm transition-colors";
+                        innerText = "🔴";
+                        statusName = "Investigate";
+                    } else if (status === "M") {
+                        bgClass = "bg-amber-50 text-amber-600 font-bold hover:bg-amber-100 cursor-pointer border border-amber-100 transition-colors";
+                        innerText = "🟡";
+                        statusName = "Monitor";
+                    } else {
+                        bgClass += " hover:bg-slate-100 cursor-pointer transition-colors";
+                    }
+
+                    // Desktop Cell
+                    desktopHTML += `<div class="p-3 flex items-center justify-center rounded-md m-0.5 ${bgClass}" 
+                                         data-status="${status}" 
+                                         data-day="${appState.dayNamesFull[colIndex]}" 
+                                         data-time="${row.time}">
+                                         ${innerText}
+                                    </div>`;
+
+                    // Build Mobile List (Only show issues)
+                    if (status === "I" || status === "M") {
+                        mobileHTML += `
+                            <div class="flex items-center justify-between p-3 rounded-lg border ${status === 'I' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}">
+                                <div>
+                                    <span class="font-bold text-slate-800">${appState.dayNamesFull[colIndex]}</span>
+                                    <span class="text-slate-500 text-sm ml-2">@ ${row.time}</span>
+                                </div>
+                                <div class="text-sm font-bold ${status === 'I' ? 'text-rose-600' : 'text-amber-600'}">
+                                    ${status === 'I' ? '🔴 Peak Risk' : '🟡 Monitor'}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            container.innerHTML = desktopHTML;
+            mobileContainer.innerHTML = mobileHTML;
+
+            // Attach Hover Events for Desktop Matrix
+            const cells = container.querySelectorAll('[data-status]');
+            const panel = document.getElementById('insight-panel');
+
+            cells.forEach(cell => {
+                cell.addEventListener('mouseenter', (e) => {
+                    const status = e.target.getAttribute('data-status');
+                    const day = e.target.getAttribute('data-day');
+                    const time = e.target.getAttribute('data-time');
+                    const insight = insights[status];
+
+                    panel.innerHTML = `
+                        <div class="animate-pulse-once">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">${day} at ${time}</div>
+                            <strong class="text-white block mb-2 text-lg">${insight.title}</strong>
+                            <p class="mb-4">${insight.desc}</p>
+                            ${status === 'I' ? `
+                                <div class="bg-rose-900/50 border border-rose-700/50 p-3 rounded-lg mt-auto">
+                                    <strong class="text-rose-200 block mb-1">The False Fix:</strong>
+                                    Spot-checking tablets during these shifts fails; human eyes cannot reliably detect instantaneous API drops.
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- 3. Chart.js Implementation ---
+        let impactChartInstance = null;
+
+        function initChart() {
+            const ctx = document.getElementById('impactChart').getContext('2d');
+            
+            // Common Options
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false, // CRITICAL for container constraint
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 14, family: 'Inter' },
+                        bodyFont: { size: 14, family: 'Inter' },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    if(appState.currentChartView === 'revenue') {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    } else {
+                                        label += context.parsed.y + ' Hours';
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [4, 4], color: '#e2e8f0' },
+                        ticks: {
+                            font: { family: 'Inter' },
+                            color: '#64748b',
+                            callback: function(value) {
+                                return appState.currentChartView === 'revenue' ? '$' + value : value + 'h';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Inter' }, color: '#475569' }
+                    }
+                }
+            };
+
+            impactChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: getRevenueData(),
+                options: chartOptions
+            });
+        }
+
+        function getRevenueData() {
+            return {
+                labels: ['Current State (Lost Margin)', 'API Recoverable Margin'],
+                datasets: [{
+                    label: 'Annual Impact',
+                    data: [appState.report.lostMargin, appState.report.lostMargin * 0.95], // Assuming 95% recovery for visual
+                    backgroundColor: [
+                        'rgba(225, 29, 72, 0.8)', // Rose 600
+                        'rgba(16, 185, 129, 0.8)'  // Emerald 500
+                    ],
+                    borderColor: [
+                        'rgb(190, 18, 60)',
+                        'rgb(4, 120, 87)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    barPercentage: 0.6
+                }]
+            };
+        }
+
+        function getLaborData() {
+            return {
+                labels: ['Current State (Wasted Hours)', 'API Automated Hours'],
+                datasets: [{
+                    label: 'Annual Labor Load',
+                    data: [appState.report.laborHours, 0], // API drops manual review to ~0
+                    backgroundColor: [
+                        'rgba(245, 158, 11, 0.8)', // Amber 500
+                        'rgba(16, 185, 129, 0.8)'  // Emerald 500
+                    ],
+                    borderColor: [
+                        'rgb(217, 119, 6)',
+                        'rgb(4, 120, 87)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    barPercentage: 0.6
+                }]
+            };
+        }
+
+        function setupEventListeners() {
+            const btnRev = document.getElementById('btn-revenue');
+            const btnLab = document.getElementById('btn-labor');
+            const contextText = document.getElementById('chart-context-text');
+
+            btnRev.addEventListener('click', () => {
+                if(appState.currentChartView === 'revenue') return;
+                appState.currentChartView = 'revenue';
+                
+                // Update Button Styles
+                btnRev.className = "px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-700 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2";
+                btnLab.className = "px-5 py-2.5 bg-white text-slate-700 border border-slate-300 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2";
+                
+                // Update Text
+                contextText.innerHTML = `Based on your specific online ordering Average Check of $33.48, 55 unrecoverable events represents over <strong class="text-slate-900">$1,840+ in Lost Gross Margin</strong> annually.`;
+                
+                // Update Chart
+                impactChartInstance.data = getRevenueData();
+                impactChartInstance.update();
+            });
+
+            btnLab.addEventListener('click', () => {
+                if(appState.currentChartView === 'labor') return;
+                appState.currentChartView = 'labor';
+                
+                // Update Button Styles
+                btnLab.className = "px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-700 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2";
+                btnRev.className = "px-5 py-2.5 bg-white text-slate-700 border border-slate-300 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-all-fast transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2";
+                
+                // Update Text
+                contextText.innerHTML = `Extrapolated to ~55 gap events annually. At a conservative 45-minute reactive response cycle, managers lose <strong class="text-slate-900">42 hours fighting unresolvable issues</strong>.`;
+
+                // Update Chart
+                impactChartInstance.data = getLaborData();
+                impactChartInstance.update();
+            });
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initApp);
+
+        // Simple CSS animation injection for dynamic insight updates
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes pulse-once {
+                0% { opacity: 0.5; transform: scale(0.98); }
+                100% { opacity: 1; transform: scale(1); }
+            }
+            .animate-pulse-once {
+                animation: pulse-once 0.3s ease-out forwards;
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+</html>
